@@ -14,7 +14,8 @@ import {
   Highlighter,
   StickyNote,
   Loader2,
-  Sparkles
+  Sparkles,
+  Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -25,14 +26,7 @@ import { summarizeText, explainParagraph, answerQuestion } from '../services/gem
 // Set up PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-interface Note {
-  id: string;
-  book_id: string;
-  page_number: number;
-  content: string;
-  highlight_data: string;
-  created_at: string;
-}
+import { storage, NoteData as Note } from '../services/storage';
 
 export default function Reader({ book, onClose }: { book: any, onClose: () => void }) {
   const [numPages, setNumPages] = useState<number>(0);
@@ -75,8 +69,7 @@ export default function Reader({ book, onClose }: { book: any, onClose: () => vo
 
   const fetchNotes = async () => {
     try {
-      const res = await fetch(`/api/books/${book.id}/notes`);
-      const data = await res.json();
+      const data = await storage.getNotes(book.id);
       setNotes(data);
     } catch (error) {
       console.error('Error fetching notes:', error);
@@ -110,24 +103,30 @@ export default function Reader({ book, onClose }: { book: any, onClose: () => vo
   const handleAddNote = async () => {
     if (!newNote.trim()) return;
     
-    const note = {
+    const note: Note = {
       id: crypto.randomUUID(),
       book_id: book.id,
       page_number: pageNumber,
       content: newNote,
-      highlight_data: ''
+      highlight_data: '',
+      created_at: new Date().toISOString()
     };
 
     try {
-      await fetch('/api/notes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(note)
-      });
-      setNotes([...notes, { ...note, created_at: new Date().toISOString() }]);
+      await storage.saveNote(note);
+      setNotes([...notes, note]);
       setNewNote('');
     } catch (error) {
       console.error('Error saving note:', error);
+    }
+  };
+
+  const handleDeleteNote = async (id: string) => {
+    try {
+      await storage.deleteNote(id);
+      setNotes(notes.filter(n => n.id !== id));
+    } catch (error) {
+      console.error('Error deleting note:', error);
     }
   };
 
@@ -359,7 +358,15 @@ export default function Reader({ book, onClose }: { book: any, onClose: () => vo
                           >
                             <div className="flex items-center justify-between">
                               <span className="text-[9px] font-bold px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-md uppercase tracking-wider">Page {note.page_number}</span>
-                              <span className="text-[9px] font-bold text-stone-400 uppercase">{new Date(note.created_at).toLocaleDateString()}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-bold text-stone-400 uppercase">{new Date(note.created_at).toLocaleDateString()}</span>
+                                <button 
+                                  onClick={() => handleDeleteNote(note.id)}
+                                  className="p-1 text-stone-300 hover:text-red-500 transition-colors"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
                             </div>
                             <p className="text-sm text-stone-600 dark:text-stone-300 leading-relaxed">{note.content}</p>
                           </motion.div>

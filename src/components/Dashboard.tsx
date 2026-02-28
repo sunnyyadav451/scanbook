@@ -2,15 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, Book, Clock, Star, MoreVertical, ExternalLink, ArrowRight, Sparkles, TrendingUp, Download } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
-
-interface BookData {
-  id: string;
-  title: string;
-  author: string;
-  cover_url: string;
-  file_path: string;
-  created_at: string;
-}
+import { storage, BookData } from '../services/storage';
 
 export default function Dashboard({ onOpenBook, onStartScan }: { 
   onOpenBook: (book: BookData) => void,
@@ -26,8 +18,7 @@ export default function Dashboard({ onOpenBook, onStartScan }: {
 
   const fetchBooks = async () => {
     try {
-      const res = await fetch('/api/books');
-      const data = await res.json();
+      const data = await storage.getBooks();
       setBooks(data);
     } catch (error) {
       console.error('Failed to fetch books:', error);

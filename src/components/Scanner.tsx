@@ -12,6 +12,8 @@ import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 // Set up PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
+import { storage } from '../services/storage';
+
 export default function Scanner({ onComplete }: { onComplete: (book: any) => void }) {
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -225,11 +227,7 @@ export default function Scanner({ onComplete }: { onComplete: (book: any) => voi
         created_at: new Date().toISOString()
       };
 
-      await fetch('/api/books', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newBook)
-      });
+      await storage.saveBook(newBook);
 
       onComplete(newBook);
     } catch (error) {
