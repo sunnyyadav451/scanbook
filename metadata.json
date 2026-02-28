@@ -1,0 +1,7 @@
+{
+  "name": "ScanBook AI",
+  "description": "AI-powered document scanner and book reader with smart summarization and note-taking.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
